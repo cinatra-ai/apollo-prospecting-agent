@@ -1,0 +1,271 @@
+{
+  "agentspec_version": "26.1.0",
+  "component_type": "Flow",
+  "id": "apollo-prospecting-agent-flow",
+  "name": "Apollo Prospecting Agent",
+  "description": "Stateless leaf agent that takes Apollo prospecting criteria (organizationDomains + titlePatterns) and discovers + persists contacts via the provider-agnostic CRM facade. Upserts an account per domain (search-then-create-or-update via crm_account_search + crm_account_create/crm_account_update — crm_account_create does NOT dedupe server-side), runs Apollo people-search, persists each contact via crm_contact_create, and optionally adds the new contacts to a CRM list via per-member crm_list_member_add (looped, not bulk).",
+  "metadata": {
+    "cinatra": {
+      "type": "flow",
+      "packageName": "@cinatra-ai/apollo-prospecting-agent",
+      "packageVersion": "0.1.1",
+      "hitlScreens": [],
+      "llm": {
+        "preferredProvider": "openai",
+        "preferredModel": "gpt-5.5"
+      }
+    }
+  },
+  "inputs": [
+    {
+      "title": "organizationDomains",
+      "type": "array",
+      "json_schema": { "items": { "type": "string" } }
+    },
+    {
+      "title": "titlePatterns",
+      "type": "array",
+      "json_schema": { "items": { "type": "string" } },
+      "default": ["CEO", "CTO", "VP Engineering", "Head of Sales"]
+    },
+    { "title": "maxPersons", "type": "integer", "default": 10 },
+    { "title": "listId", "type": "string", "default": "" },
+    { "title": "cinatra_run_id", "type": "string", "default": "" }
+  ],
+  "outputs": [
+    {
+      "title": "accountIds",
+      "type": "array",
+      "json_schema": { "items": { "type": "string" } }
+    },
+    {
+      "title": "contactIds",
+      "type": "array",
+      "json_schema": { "items": { "type": "string" } }
+    },
+    { "title": "apolloHitCount", "type": "integer" },
+    { "title": "addedToList", "type": "integer" },
+    {
+      "title": "failures",
+      "type": "array",
+      "json_schema": { "items": { "type": "object" } }
+    }
+  ],
+  "start_node": { "$component_ref": "start" },
+  "nodes": [
+    { "$component_ref": "start" },
+    { "$component_ref": "prospect" },
+    { "$component_ref": "end" }
+  ],
+  "control_flow_connections": [
+    {
+      "component_type": "ControlFlowEdge",
+      "name": "start_to_prospect",
+      "from_node": { "$component_ref": "start" },
+      "to_node": { "$component_ref": "prospect" }
+    },
+    {
+      "component_type": "ControlFlowEdge",
+      "name": "prospect_to_end",
+      "from_node": { "$component_ref": "prospect" },
+      "to_node": { "$component_ref": "end" }
+    }
+  ],
+  "data_flow_connections": [
+    {
+      "component_type": "DataFlowEdge",
+      "name": "start_organizationDomains_to_prospect_organizationDomains",
+      "source_node": { "$component_ref": "start" },
+      "source_output": "organizationDomains",
+      "destination_node": { "$component_ref": "prospect" },
+      "destination_input": "organizationDomains"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "start_titlePatterns_to_prospect_titlePatterns",
+      "source_node": { "$component_ref": "start" },
+      "source_output": "titlePatterns",
+      "destination_node": { "$component_ref": "prospect" },
+      "destination_input": "titlePatterns"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "start_maxPersons_to_prospect_maxPersons",
+      "source_node": { "$component_ref": "start" },
+      "source_output": "maxPersons",
+      "destination_node": { "$component_ref": "prospect" },
+      "destination_input": "maxPersons"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "start_listId_to_prospect_listId",
+      "source_node": { "$component_ref": "start" },
+      "source_output": "listId",
+      "destination_node": { "$component_ref": "prospect" },
+      "destination_input": "listId"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "start_cinatra_run_id_to_prospect_agent_run_id",
+      "source_node": { "$component_ref": "start" },
+      "source_output": "cinatra_run_id",
+      "destination_node": { "$component_ref": "prospect" },
+      "destination_input": "agent_run_id"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "prospect_accountIds_to_end_accountIds",
+      "source_node": { "$component_ref": "prospect" },
+      "source_output": "accountIds",
+      "destination_node": { "$component_ref": "end" },
+      "destination_input": "accountIds"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "prospect_contactIds_to_end_contactIds",
+      "source_node": { "$component_ref": "prospect" },
+      "source_output": "contactIds",
+      "destination_node": { "$component_ref": "end" },
+      "destination_input": "contactIds"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "prospect_apolloHitCount_to_end_apolloHitCount",
+      "source_node": { "$component_ref": "prospect" },
+      "source_output": "apolloHitCount",
+      "destination_node": { "$component_ref": "end" },
+      "destination_input": "apolloHitCount"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "prospect_addedToList_to_end_addedToList",
+      "source_node": { "$component_ref": "prospect" },
+      "source_output": "addedToList",
+      "destination_node": { "$component_ref": "end" },
+      "destination_input": "addedToList"
+    },
+    {
+      "component_type": "DataFlowEdge",
+      "name": "prospect_failures_to_end_failures",
+      "source_node": { "$component_ref": "prospect" },
+      "source_output": "failures",
+      "destination_node": { "$component_ref": "end" },
+      "destination_input": "failures"
+    }
+  ],
+  "$referenced_components": {
+    "start": {
+      "component_type": "StartNode",
+      "id": "start",
+      "name": "Inputs",
+      "metadata": {
+        "cinatra": {
+          "required": ["organizationDomains"],
+          "hidden": ["titlePatterns", "maxPersons", "listId", "cinatra_run_id"]
+        }
+      },
+      "inputs": [
+        {
+          "title": "organizationDomains",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } }
+        },
+        {
+          "title": "titlePatterns",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } },
+          "default": ["CEO", "CTO", "VP Engineering", "Head of Sales"]
+        },
+        { "title": "maxPersons", "type": "integer", "default": 10 },
+        { "title": "listId", "type": "string", "default": "" },
+        { "title": "cinatra_run_id", "type": "string", "default": "" }
+      ]
+    },
+    "prospect": {
+      "component_type": "ApiNode",
+      "id": "prospect",
+      "name": "Prospect via Apollo",
+      "url": "{{CINATRA_BASE_URL}}/api/llm-bridge",
+      "http_method": "POST",
+      "data": {
+        "agent_id": "apollo-prospecting-agent",
+        "system": "You are a stateless Apollo prospecting agent. Follow the SKILL.md step-by-step. Return a single JSON object with {accountIds, contactIds, apolloHitCount, addedToList, failures} — nothing else.",
+        "user": "Prospect via Apollo people-search.\nInputs:\n- organizationDomains: {{ organizationDomains }}\n- titlePatterns: {{ titlePatterns }}\n- maxPersons: {{ maxPersons }}\n- listId: {{ listId }}",
+        "agent_run_id": "{{ agent_run_id }}",
+        "cinatra_llm": {
+          "preferredProvider": "openai",
+          "preferredModel": "gpt-5.5"
+        }
+      },
+      "inputs": [
+        {
+          "title": "organizationDomains",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } }
+        },
+        {
+          "title": "titlePatterns",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } }
+        },
+        { "title": "maxPersons", "type": "integer" },
+        { "title": "listId", "type": "string" },
+        { "title": "agent_run_id", "type": "string" }
+      ],
+      "outputs": [
+        {
+          "title": "accountIds",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } }
+        },
+        {
+          "title": "contactIds",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } }
+        },
+        { "title": "apolloHitCount", "type": "integer" },
+        { "title": "addedToList", "type": "integer" },
+        {
+          "title": "failures",
+          "type": "array",
+          "json_schema": { "items": { "type": "object" } }
+        }
+      ],
+      "metadata": {
+        "cinatra": {
+          "riskClass": "write_safe",
+          "requiresApproval": false,
+          "packageName": "@cinatra-ai/apollo-prospecting-agent",
+          "description": "Single ApiNode → /api/llm-bridge. Bridge auto-discovers SKILL.md from agents/cinatra/apollo-prospecting-agent/skills/apollo-prospecting-agent/SKILL.md (via agent_id). metadata.cinatra.toolboxes is INTENTIONALLY OMITTED so the default self-MCP injection runs — the LLM reaches apollo_administration_get, apollo_people_search, crm_account_search, crm_account_create, crm_account_update, crm_contact_create, and crm_list_member_add via the injected Cinatra self-MCP."
+        }
+      }
+    },
+    "end": {
+      "component_type": "EndNode",
+      "id": "end",
+      "name": "End",
+      "outputs": [
+        {
+          "title": "accountIds",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } },
+          "default": []
+        },
+        {
+          "title": "contactIds",
+          "type": "array",
+          "json_schema": { "items": { "type": "string" } },
+          "default": []
+        },
+        { "title": "apolloHitCount", "type": "integer", "default": 0 },
+        { "title": "addedToList", "type": "integer", "default": 0 },
+        {
+          "title": "failures",
+          "type": "array",
+          "json_schema": { "items": { "type": "object" } },
+          "default": []
+        }
+      ]
+    }
+  }
+}

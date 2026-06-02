@@ -1,0 +1,12 @@
+{
+  "name": "@cinatra-ai/apollo-prospecting-agent",
+  "version": "0.1.1",
+  "license": "Apache-2.0",
+  "description": "Stateless leaf agent that takes Apollo prospecting criteria (organizationDomains + titlePatterns) and discovers + persists contacts through the crm_* facade. Upserts an account per domain (crm_account_search + crm_account_create/update), runs Apollo people-search, and persists each contact via crm_contact_create (a plain create — no server-side dedup, so repeated runs may create duplicates; cleanup/dedup is outside this leaf agent). Optionally adds the new contacts to a CRM list (crm_list_member_add).",
+  "type": "module",
+  "cinatra": {
+    "apiVersion": "cinatra.ai/v1",
+    "kind": "agent",
+    "dependencies": []
+  }
+}
