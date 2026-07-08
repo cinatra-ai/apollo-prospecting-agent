@@ -11,6 +11,7 @@
   "cinatra": {
     "apiVersion": "cinatra.ai/v1",
     "kind": "agent",
+    "displayName": "Apollo Prospecting Agent",
     "dependencies": [
       {
         "packageName": "@cinatra-ai/apollo-connector",
@@ -32,6 +33,15 @@
         "primitive": "apollo_people_search",
         "requirement": "required"
       }
-    ]
+    ],
+    "packageType": "agent",
+    "manifestVersion": 1,
+    "sourceTemplateId": "apollo-prospecting-agent-flow",
+    "sourceVersionId": "a9a55081-9c49-429b-b28a-f77d91a9fa77",
+    "sourceVersionNumber": 1,
+    "riskLevel": "low",
+    "hasApprovalGates": false,
+    "toolAccess": [],
+    "ownerOrgId": null
   }
 }
