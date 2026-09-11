@@ -227,7 +227,34 @@
         {
           "title": "failures",
           "type": "array",
-          "json_schema": { "items": { "type": "object" } }
+          "json_schema": {
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "What failed: the step label the instructions name (\"apollo\", \"account-upsert\", \"apollo-people-search\", \"crm-list-member-add\"), or the contact's name when a crm_contact_create call threw."
+                },
+                "error": {
+                  "type": "string",
+                  "description": "The stringified error, or the fixed reason the instructions name (\"not_connected\" when Apollo is not connected, \"no_match\" when an Apollo people-search returned no people)."
+                },
+                "domain": {
+                  "type": ["string", "null"],
+                  "description": "The organization domain the failure belongs to, on an account-upsert or apollo-people-search failure; null where the failure is not per-domain."
+                },
+                "listId": {
+                  "type": ["string", "null"],
+                  "description": "The CRM list id of a failed crm_list_member_add; null on every other failure."
+                },
+                "contactId": {
+                  "type": ["string", "null"],
+                  "description": "The contact id of a failed crm_list_member_add; null on every other failure."
+                }
+              },
+              "required": ["name", "error"]
+            }
+          }
         }
       ],
       "metadata": {
